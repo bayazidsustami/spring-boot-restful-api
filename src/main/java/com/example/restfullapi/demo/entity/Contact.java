@@ -6,11 +6,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity(name = "contacts")
+@Entity
+@Table(name = "contacts")
 public class Contact {
 
     @Id
@@ -32,5 +35,8 @@ public class Contact {
         referencedColumnName = "username"
     )
     private User user;
+
+    @OneToMany(mappedBy = "contact")
+    private List<Address> addresses;
 
 }
