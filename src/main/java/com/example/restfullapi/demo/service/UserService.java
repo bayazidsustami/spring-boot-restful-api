@@ -2,18 +2,14 @@ package com.example.restfullapi.demo.service;
 
 import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.RegisterUserRequest;
+import com.example.restfullapi.demo.model.UserResponse;
 import com.example.restfullapi.demo.repository.UserRepository;
 import com.example.restfullapi.demo.security.BCrypt;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Set;
 
 @Service
 public class UserService {
@@ -44,4 +40,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public UserResponse get(User user) {
+        return UserResponse.builder()
+                .username(user.getUsername())
+                .name(user.getName())
+                .build();
+    }
 }
