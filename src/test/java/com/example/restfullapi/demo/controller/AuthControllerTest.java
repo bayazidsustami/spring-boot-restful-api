@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -114,6 +115,49 @@ class AuthControllerTest {
             Assertions.assertNotNull(userDb);
             Assertions.assertEquals(userDb.getToken(), response.getData().getToken());
             Assertions.assertEquals(userDb.getTokenExpireAt(), response.getData().getExpireAt());
+        });
+    }
+
+    @Test
+    void logoutFailed() throws Exception {
+        mockMvc.perform(
+                delete("/api/auth/logout")
+                        .accept(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+            Assertions.assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void logoutSuccess() throws Exception {
+        User user = new User();
+        user.setName("Test");
+        user.setUsername("test");
+        user.setPassword(BCrypt.hashpw("test", BCrypt.gensalt()));
+        user.setToken("test");
+        user.setTokenExpireAt(System.currentTimeMillis() + 100000000L);
+        repository.save(user);
+
+        mockMvc.perform(
+                delete("/api/auth/logout")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isOk()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+            Assertions.assertNull(response.getErrors());
+            Assertions.assertEquals("OK", response.getData());
+
+            User userDb = repository.findById("test").orElse(null);
+            Assertions.assertNotNull(userDb);
+            Assertions.assertNull(userDb.getToken());
+            Assertions.assertNull(userDb.getTokenExpireAt());
         });
     }
 }

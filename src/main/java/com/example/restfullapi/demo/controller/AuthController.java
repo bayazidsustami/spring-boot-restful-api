@@ -1,11 +1,13 @@
 package com.example.restfullapi.demo.controller;
 
+import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.LoginUserRequest;
 import com.example.restfullapi.demo.model.TokenResponse;
 import com.example.restfullapi.demo.model.WebResponse;
 import com.example.restfullapi.demo.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +28,15 @@ public class AuthController {
         return WebResponse.<TokenResponse>builder()
                 .data(response)
                 .build();
+    }
+
+    @DeleteMapping(
+            path = "/api/auth/logout",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<String> logout(User user) {
+        authService.logout(user);
+        return WebResponse.<String>builder().data("OK").build();
     }
 
 }
