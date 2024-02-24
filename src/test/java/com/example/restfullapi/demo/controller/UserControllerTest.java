@@ -2,6 +2,7 @@ package com.example.restfullapi.demo.controller;
 
 import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.RegisterUserRequest;
+import com.example.restfullapi.demo.model.UpdateUserRequest;
 import com.example.restfullapi.demo.model.UserResponse;
 import com.example.restfullapi.demo.model.WebResponse;
 import com.example.restfullapi.demo.repository.UserRepository;
@@ -17,8 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -212,6 +212,67 @@ class UserControllerTest {
             Assertions.assertNull(webResponse.getErrors());
             Assertions.assertEquals("test", webResponse.getData().getUsername());
             Assertions.assertEquals("Test", webResponse.getData().getName());
+        });
+    }
+
+    @Test
+    void updateUserUnauthorized() throws Exception {
+        UpdateUserRequest userRequest = new UpdateUserRequest();
+
+        mockMvc.perform(
+                patch("/api/users/current")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userRequest))
+        ).andExpectAll(
+                status().isUnauthorized()
+        ).andDo( result -> {
+            WebResponse<String> webResponse = objectMapper.readValue(
+                    result.getResponse().getContentAsString(),
+                    new TypeReference<>() {
+                    }
+            );
+
+            Assertions.assertNotNull(webResponse.getErrors());
+        });
+    }
+
+    @Test
+    void updateUserSuccess() throws Exception {
+        User user = new User();
+        user.setUsername("test");
+        user.setName("Test");
+        user.setToken("test");
+        user.setPassword(BCrypt.hashpw("rahasia", BCrypt.gensalt()));
+        user.setTokenExpireAt(System.currentTimeMillis() + 1000000000L);
+        userRepository.save(user);
+
+        UpdateUserRequest userRequest = new UpdateUserRequest();
+        userRequest.setName("bay");
+        userRequest.setPassword("bay12345");
+
+        mockMvc.perform(
+                patch("/api/users/current")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userRequest))
+        ).andExpectAll(
+                status().isOk()
+        ).andDo( result -> {
+            WebResponse<UserResponse> webResponse = objectMapper.readValue(
+                    result.getResponse().getContentAsString(),
+                    new TypeReference<>() {
+                    }
+            );
+
+            Assertions.assertNull(webResponse.getErrors());
+            Assertions.assertEquals("bay", webResponse.getData().getName());
+            Assertions.assertEquals("test", webResponse.getData().getUsername());
+
+            User userDB = userRepository.findById("test").orElse(null);
+            Assertions.assertNotNull(userDB);
+            Assertions.assertTrue(BCrypt.checkpw("bay12345", userDB.getPassword()));
         });
     }
 }

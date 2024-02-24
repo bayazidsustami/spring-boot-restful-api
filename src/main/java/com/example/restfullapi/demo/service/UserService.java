@@ -2,6 +2,7 @@ package com.example.restfullapi.demo.service;
 
 import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.RegisterUserRequest;
+import com.example.restfullapi.demo.model.UpdateUserRequest;
 import com.example.restfullapi.demo.model.UserResponse;
 import com.example.restfullapi.demo.repository.UserRepository;
 import com.example.restfullapi.demo.security.BCrypt;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Objects;
 
 @Service
 public class UserService {
@@ -44,6 +47,26 @@ public class UserService {
         return UserResponse.builder()
                 .username(user.getUsername())
                 .name(user.getName())
+                .build();
+    }
+
+    @Transactional
+    public UserResponse update(User user, UpdateUserRequest request) {
+        validationService.validate(request);
+
+        if (Objects.nonNull(request.getName())){
+            user.setName(request.getName());
+        }
+
+        if (Objects.nonNull(request.getPassword())) {
+            user.setPassword(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt()));
+        }
+
+        userRepository.save(user);
+
+        return UserResponse.builder()
+                .name(user.getName())
+                .username(user.getUsername())
                 .build();
     }
 }
