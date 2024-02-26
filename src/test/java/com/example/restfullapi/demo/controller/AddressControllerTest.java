@@ -1,6 +1,7 @@
 package com.example.restfullapi.demo.controller;
 
 
+import com.example.restfullapi.demo.entity.Address;
 import com.example.restfullapi.demo.entity.Contact;
 import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.AddressResponse;
@@ -21,8 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.UUID;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -121,6 +121,58 @@ class AddressControllerTest {
             Assertions.assertEquals(request.getPostalCode(), response.getData().getPostalCode());
 
             Assertions.assertTrue(addressRepository.existsById(response.getData().getId()));
+        });
+    }
+
+    @Test
+    void getAddressNotFound() throws Exception {
+        mockMvc.perform(
+                get("/api/contacts/test/addresses/test")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isNotFound()
+        ).andDo( result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            Assertions.assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getAddressSuccess() throws Exception {
+        Contact contact = contactRepository.findById("test").orElseThrow();
+
+        Address address = new Address();
+        address.setContact(contact);
+        address.setId("test");
+        address.setStreet("jalan");
+        address.setCity("Makassar");
+        address.setProvince("Sulawesi Selatan");
+        address.setCountry("Indonesia");
+        address.setPostalCode("90233");
+        addressRepository.save(address);
+
+        mockMvc.perform(
+                get("/api/contacts/test/addresses/test")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isOk()
+        ).andDo( result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            Assertions.assertNull(response.getErrors());
+            Assertions.assertEquals(address.getId(), response.getData().getId());
+            Assertions.assertEquals(address.getStreet(), response.getData().getStreet());
+            Assertions.assertEquals(address.getCity(), response.getData().getCity());
+            Assertions.assertEquals(address.getProvince(), response.getData().getProvince());
+            Assertions.assertEquals(address.getCountry(), response.getData().getCountry());
+            Assertions.assertEquals(address.getPostalCode(), response.getData().getPostalCode());
         });
     }
 }
