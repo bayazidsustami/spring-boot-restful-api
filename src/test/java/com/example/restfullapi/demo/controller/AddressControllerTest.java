@@ -23,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -287,6 +289,55 @@ class AddressControllerTest {
             Assertions.assertNull(response.getErrors());
             Assertions.assertEquals("OK", response.getData());
             Assertions.assertFalse(addressRepository.existsById("test"));
+        });
+    }
+
+    @Test
+    void getAllAddressNotFound() throws Exception {
+        mockMvc.perform(
+                get("/api/contacts/salah/addresses")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isNotFound()
+        ).andDo( result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            Assertions.assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getAllAddressSuccess() throws Exception {
+        Contact contact = contactRepository.findById("test").orElseThrow();
+
+        for (int i = 0; i < 5; i++) {
+            Address address = new Address();
+            address.setContact(contact);
+            address.setId("test" + i);
+            address.setStreet("jalan");
+            address.setCity("Makassar");
+            address.setProvince("Sulawesi Selatan");
+            address.setCountry("Indonesia");
+            address.setPostalCode("90233");
+            addressRepository.save(address);
+        }
+
+        mockMvc.perform(
+                get("/api/contacts/test/addresses")
+                        .header("X-API-TOKEN", "test")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+                status().isOk()
+        ).andDo( result -> {
+            WebResponse<List<AddressResponse>> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            Assertions.assertNull(response.getErrors());
+            Assertions.assertEquals(5, response.getData().size());
         });
     }
 }
