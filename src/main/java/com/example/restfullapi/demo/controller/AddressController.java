@@ -3,6 +3,7 @@ package com.example.restfullapi.demo.controller;
 import com.example.restfullapi.demo.entity.User;
 import com.example.restfullapi.demo.model.AddressResponse;
 import com.example.restfullapi.demo.model.CreateAddressRequest;
+import com.example.restfullapi.demo.model.UpdateAddressRequest;
 import com.example.restfullapi.demo.model.WebResponse;
 import com.example.restfullapi.demo.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,26 @@ public class AddressController {
             @PathVariable("addressId") String addressId
     ){
         AddressResponse addressResponse = addressService.get(user, contactId, addressId);
+        return WebResponse.<AddressResponse>builder()
+                .data(addressResponse)
+                .build();
+    }
+
+    @PutMapping(
+            path = "/api/contacts/{contactId}/addresses/{addressId}",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<AddressResponse> update(
+            User user,
+            @RequestBody UpdateAddressRequest request,
+            @PathVariable("contactId") String contactId,
+            @PathVariable("addressId") String addressId
+    ){
+        request.setContactId(contactId);
+        request.setAddressId(addressId);
+
+        AddressResponse addressResponse = addressService.update(user, request);
         return WebResponse.<AddressResponse>builder()
                 .data(addressResponse)
                 .build();
