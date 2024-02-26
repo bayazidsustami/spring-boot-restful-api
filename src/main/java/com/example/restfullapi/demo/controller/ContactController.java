@@ -1,14 +1,14 @@
 package com.example.restfullapi.demo.controller;
 
 import com.example.restfullapi.demo.entity.User;
-import com.example.restfullapi.demo.model.ContactResponse;
-import com.example.restfullapi.demo.model.CreateContactRequest;
-import com.example.restfullapi.demo.model.UpdateContactRequest;
-import com.example.restfullapi.demo.model.WebResponse;
+import com.example.restfullapi.demo.model.*;
 import com.example.restfullapi.demo.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class ContactController {
@@ -62,6 +62,39 @@ public class ContactController {
     public WebResponse<String> delete(User user, @PathVariable("contactId") String id) {
         contactService.delete(user, id);
         return WebResponse.<String>builder().data("OK").build();
+    }
+
+
+    @GetMapping(
+            path = "/api/contacts",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<List<ContactResponse>> search(
+            User user,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "phone", required = false) String phone,
+            @RequestParam(name = "page", required = false, defaultValue = "0") Integer page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") Integer size
+    ) {
+        SearchContactRequest request = SearchContactRequest.builder()
+                .name(name)
+                .email(email)
+                .phone(phone)
+                .page(page)
+                .size(size)
+                .build();
+
+        Page<ContactResponse> responses = contactService.search(user, request);
+        return WebResponse.<List<ContactResponse>>builder()
+                .data(responses.getContent())
+                .paging(PagingResponse.builder()
+                        .currentPage(responses.getNumber())
+                        .totalPage(responses.getTotalPages())
+                        .size(request.getSize())
+                        .build()
+                )
+                .build();
     }
 
 }
